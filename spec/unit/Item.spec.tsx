@@ -1,5 +1,4 @@
-import { render, screen } from '@testing-library/react'
-import uE from '@testing-library/user-event'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { Item } from 'src/components/Item'
 
 describe('Элемент списка задач', () => {
@@ -32,9 +31,8 @@ describe('Элемент списка задач', () => {
 
     render(<Item {...task} onDelete={mockOnDelete} onToggle={mockOnToggle} />)
 
-    const label = screen.getByLabelText('Купить молоко')
-    const strikethrough = label.querySelector('s')
-    expect(strikethrough).toBeInTheDocument()
+    const strikethrough = screen.getByText('Купить молоко')
+    expect(strikethrough?.tagName).toBe('S')
     expect(strikethrough).toHaveTextContent('Купить молоко')
   })
 
@@ -51,7 +49,7 @@ describe('Элемент списка задач', () => {
     expect(deleteButton).toBeDisabled()
   })
 
-  it('можно удалять выполненные задачи', () => {
+  it('можно удалять выполненные задачи', async () => {
     const task: Task = {
       id: '1',
       header: 'Купить молоко',
@@ -63,11 +61,11 @@ describe('Элемент списка задач', () => {
     const deleteButton = screen.getByRole('button', { name: /удалить/i })
     expect(deleteButton).not.toBeDisabled()
 
-    uE.click(deleteButton)
+    fireEvent.click(deleteButton)
     expect(mockOnDelete).toHaveBeenCalledWith('1')
   })
 
-  it('вызывает onToggle при клике на чекбокс', () => {
+  it('вызывает onToggle при клике на чекбокс', async () => {
     const task: Task = {
       id: '1',
       header: 'Купить молоко',
@@ -77,11 +75,11 @@ describe('Элемент списка задач', () => {
     render(<Item {...task} onDelete={mockOnDelete} onToggle={mockOnToggle} />)
 
     const checkbox = screen.getByRole('checkbox')
-    uE.click(checkbox)
+    fireEvent.click(checkbox)
     expect(mockOnToggle).toHaveBeenCalledWith('1')
   })
 
-  it('вызывает onToggle при клике на лейбл', () => {
+  it('вызывает onToggle при клике на лейбл', async () => {
     const task: Task = {
       id: '1',
       header: 'Купить молоко',
@@ -91,7 +89,7 @@ describe('Элемент списка задач', () => {
     render(<Item {...task} onDelete={mockOnDelete} onToggle={mockOnToggle} />)
 
     const label = screen.getByLabelText('Купить молоко')
-    uE.click(label)
+    fireEvent.click(label)
     expect(mockOnToggle).toHaveBeenCalledWith('1')
   })
 

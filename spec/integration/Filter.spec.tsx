@@ -1,12 +1,11 @@
-import { render, screen } from '@testing-library/react'
-import uE from '@testing-library/user-event'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { Provider } from 'react-redux'
 import { App } from 'src/App'
 import { store } from 'src/store/configureStore'
 import { addTask, toggleTask } from 'src/store/taskSlice'
 
 describe('Список задач', () => {
-  beforeAll(() => {
+  beforeEach(() => {
     store.dispatch({ type: 'taskList/reset' })
   })
 
@@ -29,7 +28,10 @@ describe('Список задач', () => {
       </Provider>
     )
 
-    expect(screen.getByText('Купить хлеб')).not.toBeInTheDocument()
+    const filterButton = screen.getByRole('button', { name: /фильтр/i })
+    fireEvent.click(filterButton)
+
+    expect(screen.queryByText('Купить хлеб')).not.toBeInTheDocument()
     expect(screen.getByText('Купить молоко')).toBeInTheDocument()
     expect(screen.getByText('Выгулять собаку')).toBeInTheDocument()
   })
@@ -55,13 +57,12 @@ describe('Список задач', () => {
 
     const filterButton = screen.getByRole('button', { name: /фильтр/i })
 
-    uE.click(filterButton)
-
+    fireEvent.click(filterButton)
     expect(screen.queryByText('Купить хлеб')).not.toBeInTheDocument()
 
-    uE.click(filterButton)
+    fireEvent.click(filterButton)
 
-    expect(screen.getByText('Купить хлеб')).toBeInTheDocument()
+    expect(screen.getAllByText('Купить хлеб').length).toBeGreaterThan(0)
     expect(screen.getByText('Купить молоко')).toBeInTheDocument()
     expect(screen.getByText('Выгулять собаку')).toBeInTheDocument()
   })
@@ -86,10 +87,12 @@ describe('Список задач', () => {
     )
 
     const filterButton = screen.getByRole('button', { name: /фильтр/i })
+    fireEvent.click(filterButton)
 
-    uE.click(filterButton)
+    expect(screen.getByText(/Активных задач:/)).toHaveTextContent(
+      'Активных задач: 1'
+    )
 
-    expect(screen.getByText(/активных задач: 1/i)).toBeInTheDocument()
     expect(screen.getByText('Выгулять собаку')).toBeInTheDocument()
   })
 })

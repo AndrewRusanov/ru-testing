@@ -50,7 +50,7 @@ it('Список содержит не больше 10 невыполненны�
     <List items={items} onDelete={onDelete} onToggle={onToggle} />
   )
 
-  const taskItems = container.querySelectorAll('.task-item')
+  const taskItems = container.querySelectorAll('.item-wrapper')
   expect(taskItems).toHaveLength(12)
 
   const uncompletedTasks = items.filter(task => !task.done)

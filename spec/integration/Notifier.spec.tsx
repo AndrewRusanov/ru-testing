@@ -1,86 +1,79 @@
 import { render, screen, waitFor } from '@testing-library/react'
-import uE from '@testing-library/user-event'
+import userEvent from '@testing-library/user-event'
 import { Provider } from 'react-redux'
 import { App } from 'src/App'
 import { store } from 'src/store/configureStore'
 
-describe('Оповещение при вополнении задачи', () => {
+describe('Оповещение при выполнении задачи', () => {
   beforeEach(() => {
     store.dispatch({ type: 'taskList/reset' })
-  })
-
-  it.todo('появляется и содержит заголовок задачи', async () => {
+    jest.useFakeTimers()
     render(
       <Provider store={store}>
         <App />
       </Provider>
     )
-
-    const input = screen.getByRole('textbox')
-    const addButton = screen.getByRole('button', { name: /добавить/i })
-
-    uE.type(input, 'Купить молоко')
-    uE.click(addButton)
-
-    expect(screen.getByText('Купить молоко')).toBeInTheDocument()
-
-    const taskCheckbox = screen.getAllByLabelText('Купить молоко')
-
-    uE.click(taskCheckbox)
-
-    await waitFor(() => {
-      expect(
-        screen.getByText('Задача "Купить молоко" завершена')
-      ).toBeInTheDocument()
-    })
-
-    await waitFor(
-      () => {
-        expect(
-          screen.queryByText('Задача "Купить молоко" завершена')
-        ).not.toBeInTheDocument()
-      },
-      { timeout: 3000 }
-    )
   })
 
-  it.todo('одновременно может отображаться только одно', async () => {
-    render(
-      <Provider store={store}>
-        <App />
-      </Provider>
-    )
+  afterEach(() => {
+    jest.runOnlyPendingTimers()
+    jest.useRealTimers()
+  })
 
+  const addTaskViaUI = async (title: string) => {
     const input = screen.getByRole('textbox')
     const addButton = screen.getByRole('button', { name: /добавить/i })
 
-    uE.type(input, 'Первая задача')
-    uE.click(addButton)
+    await userEvent.clear(input)
+    await userEvent.type(input, title)
+    await userEvent.click(addButton)
 
-    uE.type(input, 'Вторая задача')
-    uE.click(addButton)
-
-    const firstTaskCheckbox = screen.getAllByLabelText('Первая задача')
-
-    uE.click(firstTaskCheckbox)
-
+    // Ждём, пока задача появится в DOM
     await waitFor(() => {
-      expect(
-        screen.getByText('Задача "Первая задача" завершена')
-      ).toBeInTheDocument()
+      expect(screen.getByLabelText(title)).toBeInTheDocument()
     })
+  }
 
-    const secondTaskCheckbox = screen.getByLabelText('Вторая задача')
-    uE.click(secondTaskCheckbox)
+  it('появляется и содержит заголовок задачи', async () => {
+    await addTaskViaUI('Купить молоко')
 
-    // Проверяем, что отображается только последнее оповещение
-    await waitFor(() => {
-      expect(
-        screen.queryByText('Задача "Первая задача" завершена')
-      ).not.toBeInTheDocument()
-      expect(
-        screen.getByText('Задача "Вторая задача" завершена')
-      ).toBeInTheDocument()
-    })
+    const taskCheckbox = screen.getByLabelText('Купить молоко')
+    await userEvent.click(taskCheckbox)
+
+    expect(
+      screen.getByText('Задача "Купить молоко" завершена')
+    ).toBeInTheDocument()
+
+    jest.advanceTimersByTime(3000)
+
+    expect(
+      screen.queryByText('Задача "Купить молоко" завершена')
+    ).not.toBeInTheDocument()
+  })
+
+  it('одновременно может отображаться только одно уведомление', async () => {
+    await addTaskViaUI('Первая задача')
+    await addTaskViaUI('Вторая задача')
+
+    const firstCheckbox = screen.getByLabelText('Первая задача')
+    const secondCheckbox = screen.getByLabelText('Вторая задача')
+
+    await userEvent.click(firstCheckbox)
+    expect(
+      screen.getByText('Задача "Первая задача" завершена')
+    ).toBeInTheDocument()
+
+    await userEvent.click(secondCheckbox)
+    expect(
+      screen.queryByText('Задача "Первая задача" завершена')
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByText('Задача "Вторая задача" завершена')
+    ).toBeInTheDocument()
+
+    jest.advanceTimersByTime(3000)
+    expect(
+      screen.queryByText('Задача "Вторая задача" завершена')
+    ).not.toBeInTheDocument()
   })
 })
